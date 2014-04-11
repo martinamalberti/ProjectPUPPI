@@ -88,6 +88,9 @@ std::vector<float> v_jet_pt_4Vcorr_;
 std::vector<float> v_jet_eta_4Vcorr_;
 std::vector<float> v_jet_phi_4Vcorr_;
 
+// gen matching (index of the 
+std::vector<int> v_jet_igenmatch_;
+
 float p_isPU, p_isCH, p_px, p_py, p_pz, p_e, p_puppiW_pfchs, p_cleansedW, p_puppiW_chLV, p_puppiW_all;
 float p_alphas_chLV, p_alphas_all;
 
@@ -104,10 +107,12 @@ void                              setupCMSReadOut(TTree *iTree );
 void                              readGenCMSEvent(TTree *iTree, std::vector< fastjet::PseudoJet > &allParticles );
 void                              readCMSEvent   (TTree *iTree, std::vector< RecoObj >            &allParticles ,bool iUseDeltaZ);
 void                              setupCMSSWJetReadOut(TTree *iTree, float R );
-void                              readCMSSWJet   (TTree *iTree, TTree &tree);
+void                              readCMSSWJet   (TTree *iTree, TTree &tree, std::vector<fastjet::PseudoJet> genJets);
 std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet > constits, TTree &tree, char* tag, double vRparam );
+void getGenMatchIndex(std::vector<fastjet::PseudoJet> genJets, std::vector<fastjet::PseudoJet> recoJets, TTree &tree);
 void                              plotEvent( std::vector < fastjet::PseudoJet > constits, char* name, std::vector < fastjet::PseudoJet > jets );
 void                              setTDRStyle();
+
 
 void initVars(){
     njets_ = -1.;
@@ -126,6 +131,7 @@ void initVars(){
     v_jet_pt_4Vcorr_.clear();
     v_jet_eta_4Vcorr_.clear();
     v_jet_phi_4Vcorr_.clear();
+    v_jet_igenmatch_.clear();
 }
 
 void addBranches( TTree &tree ){
@@ -148,6 +154,8 @@ void addBranches( TTree &tree ){
     tree.Branch("v_jet_pt_4Vcorr",&v_jet_pt_4Vcorr_);
     tree.Branch("v_jet_eta_4Vcorr",&v_jet_eta_4Vcorr_);
     tree.Branch("v_jet_phi_4Vcorr",&v_jet_phi_4Vcorr_);
+
+    tree.Branch("v_jet_igenmatch",&v_jet_igenmatch_);
     
 }
 
@@ -309,24 +317,27 @@ int main( int argc, char **argv ) {
         initVars();
         //std::cout << "analyze gen" << std::endl;
         std::vector<fastjet::PseudoJet> genJets = analyzeEvent( genParticles, *tree_gen, canvname, jetR );
-        initVars();
+	initVars();
         //std::cout << "analyze pf" << std::endl;
         std::vector<fastjet::PseudoJet> pfJets = analyzeEvent( pfParticles, *tree_pf, canvname, jetR );
-        pfRho = curRho;
+        getGenMatchIndex(genJets, pfJets, *tree_pf);
+	pfRho = curRho;
         initVars();
         //std::cout << "analyze pfchs" << std::endl;
         isPFCHS = true;
         std::vector<fastjet::PseudoJet> pfchsJets = analyzeEvent( chsParticles, *tree_pfchs, canvname, jetR );
+        getGenMatchIndex(genJets, pfchsJets, *tree_pfchs);
         pfchsRho = curRho;
         isPFCHS = false;
         initVars();
         //std::cout << "analyze puppi" << std::endl;
         std::vector<fastjet::PseudoJet> puppiJets = analyzeEvent( puppiParticles, *tree_pf_puppi, canvname, jetR );
-        //
+	getGenMatchIndex(genJets, puppiJets, *tree_pf_puppi);
+	//
 	
 	// read the tree containing standard CMSSW jets and fill directly the output tree   
 	initVars();
-	readCMSSWJet(fTree,*tree_pf_cmssw);
+	readCMSSWJet(fTree,*tree_pf_cmssw, genJets);
 
         
         if (nEvts < -100 and nEvts > 0){
@@ -419,7 +430,7 @@ void setupCMSSWJetReadOut(TTree *iTree, float R ) {
 }
 
 
-void readCMSSWJet(TTree *iTree, TTree &tree) {
+void readCMSSWJet(TTree *iTree, TTree &tree, std::vector<fastjet::PseudoJet> genJets) {
 
   iTree->GetEntry(fCount);
 
@@ -434,6 +445,26 @@ void readCMSSWJet(TTree *iTree, TTree &tree) {
     v_jet_eta_4Vcorr_.push_back(pJet->eta);
     v_jet_phi_4Vcorr_.push_back(pJet->phi);
 
+    // gen matching
+    int imatch = -1;
+    double mindr = 0.4;
+    TLorentzVector *recojet = new TLorentzVector();
+    recojet->SetPtEtaPhiM(pJet->pt, pJet->eta, pJet->phi, pJet->mass);
+    for (int ig = 0; ig < genJets.size(); ig++){
+      TLorentzVector *genjet = new TLorentzVector();
+      genjet->SetPtEtaPhiM(genJets[ig].pt(), genJets[ig].eta(), genJets[ig].phi(), genJets[ig].m());
+      double dr = recojet->DeltaR(*genjet);
+      if (dr < mindr){
+	mindr = dr;
+	imatch = ig;
+      }
+      delete genjet;
+    }
+
+    delete recojet;
+
+    v_jet_igenmatch_.push_back(imatch);
+    
     njets_++;
     if (pJet->pt > 25){
       njets_corr_++;
@@ -579,15 +610,15 @@ std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet
     int activeAreaRepeats = 1;
     double ghostArea = 0.01;
     double ghostEtaMax = 7.0;
-    
+
     fastjet::GhostedAreaSpec fjActiveArea(ghostEtaMax,activeAreaRepeats,ghostArea);
     fastjet::AreaDefinition fjAreaDefinition( fastjet::active_area, fjActiveArea );
     fastjet::ClusterSequenceArea* thisClustering_ = new fastjet::ClusterSequenceArea(constits, jetDef, fjAreaDefinition);
     std::vector<fastjet::PseudoJet> out_jets_ = sorted_by_pt(thisClustering_->inclusive_jets(25.0));
-    
+
     // trim jet
     fastjet::Filter trimmer( fastjet::Filter(fastjet::JetDefinition(fastjet::kt_algorithm, 0.3), fastjet::SelectorPtFractionMin(0.05)));
-    
+
     // 4-vector subtraction
     fastjet::GridMedianBackgroundEstimator lGrid(5.0,0.8);
     lGrid.set_particles(constits);
@@ -658,6 +689,28 @@ std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet
     
     return corrjets;
 }
+
+
+void getGenMatchIndex(std::vector<fastjet::PseudoJet> genJets, std::vector<fastjet::PseudoJet> recoJets, TTree &tree){
+  
+  
+  for (int ir = 0; ir < recoJets.size(); ir++){
+    int imatch = -1;
+    double mindr = 0.4;
+    for (int ig = 0; ig < genJets.size(); ig++){
+      double dr = recoJets[ir].delta_R(genJets[ig]);
+      if (dr < mindr){
+	mindr = dr;
+	imatch = ig;
+      }
+    }
+    
+    v_jet_igenmatch_.push_back(imatch);
+  }
+
+  tree.Fill();
+  
+ }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
