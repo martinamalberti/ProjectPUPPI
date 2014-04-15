@@ -6,7 +6,6 @@ import glob
 from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-i","--inputdir",dest="inputdir",type="string",help="Path where ntuples are located. Example: /store/cmst3/user/malberti/HIGGS/VERTEX/2012/DATA/")
-parser.add_option("-c","--config",dest="config",type="string",help="Configuration file template. Example: TMVA_check_ZmumuData_TEMPLATE.cfg")
 parser.add_option("-w","--workdir",dest="workdir",type="string",default="EffJobs",help="Name of the directory for jobs")
 parser.add_option("-o","--outputname",dest="outputname",type="string",default="testEfficiency",help="Name of the output file")
 parser.add_option("-n","--njobs",dest="njobs",type="int",help="Number of jobs")
