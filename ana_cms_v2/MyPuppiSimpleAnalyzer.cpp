@@ -108,8 +108,9 @@ void                              readGenCMSEvent(TTree *iTree, std::vector< fas
 void                              readCMSEvent   (TTree *iTree, std::vector< RecoObj >            &allParticles ,bool iUseDeltaZ);
 void                              setupCMSSWJetReadOut(TTree *iTree, float R );
 void                              readCMSSWJet   (TTree *iTree, TTree &tree, std::vector<fastjet::PseudoJet> genJets);
-std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet > constits, TTree &tree, char* tag, double vRparam );
-void getGenMatchIndex(std::vector<fastjet::PseudoJet> genJets, std::vector<fastjet::PseudoJet> recoJets, TTree &tree);
+std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet > constits, TTree &tree, char* tag, double vRparam, bool doGenMatching, std::vector < fastjet::PseudoJet > genJets );
+//void getGenMatchIndex(std::vector<fastjet::PseudoJet> recoJets, std::vector<fastjet::PseudoJet> genJets, std::vector<int> &indexes);
+int                               getGenMatchIndex(fastjet::PseudoJet recoJet, std::vector<fastjet::PseudoJet> genJets);
 void                              plotEvent( std::vector < fastjet::PseudoJet > constits, char* name, std::vector < fastjet::PseudoJet > jets );
 void                              setTDRStyle();
 
@@ -297,8 +298,11 @@ int main( int argc, char **argv ) {
     while(true){
         
         nEvts++;
-        if (nEvts % 10 == 0) std::cout << "file is " << ((float) nEvts)*100./maxEvents << "% done" << std::endl;
+	//cout << "Analyzing events " <<  nEvts << endl;
+	//if ( nEvts == 55 ) break; 
+	if (nEvts % 10 == 0) std::cout << "file is " << ((float) nEvts)*100./maxEvents << "% done" << std::endl;
         
+
         if (nEvts == maxEvents){ break; }
         readCMSEvent(fTree, allParticles,useDeltaZ);
         readGenCMSEvent(fTree, genParticles);
@@ -316,23 +320,24 @@ int main( int argc, char **argv ) {
         //std::cout << "--------------------" << std::endl;
         initVars();
         //std::cout << "analyze gen" << std::endl;
-        std::vector<fastjet::PseudoJet> genJets = analyzeEvent( genParticles, *tree_gen, canvname, jetR );
+	std::vector<fastjet::PseudoJet> dummy;
+        std::vector<fastjet::PseudoJet> genJets = analyzeEvent( genParticles, *tree_gen, canvname, jetR, false, dummy);
 	initVars();
         //std::cout << "analyze pf" << std::endl;
-        std::vector<fastjet::PseudoJet> pfJets = analyzeEvent( pfParticles, *tree_pf, canvname, jetR );
-        getGenMatchIndex(genJets, pfJets, *tree_pf);
+        std::vector<fastjet::PseudoJet> pfJets = analyzeEvent( pfParticles, *tree_pf, canvname, jetR, true, genJets);
+        //getGenMatchIndex(pfJets, genJets, v_jet_igenmatch_);
 	pfRho = curRho;
         initVars();
         //std::cout << "analyze pfchs" << std::endl;
         isPFCHS = true;
-        std::vector<fastjet::PseudoJet> pfchsJets = analyzeEvent( chsParticles, *tree_pfchs, canvname, jetR );
-        getGenMatchIndex(genJets, pfchsJets, *tree_pfchs);
-        pfchsRho = curRho;
+	std::vector<fastjet::PseudoJet> pfchsJets = analyzeEvent( chsParticles, *tree_pfchs, canvname, jetR, true, genJets);
+        //getGenMatchIndex(pfchsJets, genJets, v_jet_igenmatch_);
+	pfchsRho = curRho;
         isPFCHS = false;
         initVars();
         //std::cout << "analyze puppi" << std::endl;
-        std::vector<fastjet::PseudoJet> puppiJets = analyzeEvent( puppiParticles, *tree_pf_puppi, canvname, jetR );
-	getGenMatchIndex(genJets, puppiJets, *tree_pf_puppi);
+        std::vector<fastjet::PseudoJet> puppiJets = analyzeEvent( puppiParticles, *tree_pf_puppi, canvname, jetR, true, genJets);
+	//getGenMatchIndex(puppiJets, genJets, v_jet_igenmatch_);
 	//
 	
 	// read the tree containing standard CMSSW jets and fill directly the output tree   
@@ -599,7 +604,7 @@ void plotEvent( std::vector < fastjet::PseudoJet > constits, char* name, std::ve
     delete can;
 }
 
-std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet > constits, TTree &tree, char* tag, double vRparam ){
+std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet > constits, TTree &tree, char* tag, double vRparam, bool doGenMatching, std::vector < fastjet::PseudoJet > genJets){
     
     //std::cout << "constits.size() = " << constits.size() << std::endl;
     
@@ -665,8 +670,18 @@ std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet
         
         if (v_jet_pt_4Vcorr_[i] > 25.0){
             njets_corr_++;
-            corrjets.push_back(pCorrJet);
+            //corrjets.push_back(pCorrJet);
         }
+
+	corrjets.push_back(pCorrJet); //don't cut on pt
+	
+	// gen matching
+	int imatch = -1;
+	if (doGenMatching && !(genJets.empty())){
+	  imatch = getGenMatchIndex(pCorrJet,genJets);
+	}
+	v_jet_igenmatch_.push_back(imatch);
+	
     }
     
     // MET variables
@@ -691,26 +706,22 @@ std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet
 }
 
 
-void getGenMatchIndex(std::vector<fastjet::PseudoJet> genJets, std::vector<fastjet::PseudoJet> recoJets, TTree &tree){
+//void getGenMatchIndex(std::vector<fastjet::PseudoJet> recoJets, std::vector<fastjet::PseudoJet> genJets, std::vector<int> &indexes){
+int getGenMatchIndex(fastjet::PseudoJet recoJet, std::vector<fastjet::PseudoJet> genJets){
   
-  
-  for (int ir = 0; ir < recoJets.size(); ir++){
-    int imatch = -1;
-    double mindr = 0.4;
-    for (int ig = 0; ig < genJets.size(); ig++){
-      double dr = recoJets[ir].delta_R(genJets[ig]);
-      if (dr < mindr){
-	mindr = dr;
-	imatch = ig;
-      }
+  //  for (int ir = 0; ir < recoJets.size(); ir++){
+  int imatch = -1;
+  double mindr = 0.4;
+  for (int ig = 0; ig < genJets.size(); ig++){
+    //double dr = recoJets[ir].delta_R(genJets[ig]);
+    double dr = recoJet.delta_R(genJets[ig]);
+    if (dr < mindr){
+      mindr = dr;
+      imatch = ig;
     }
-    
-    v_jet_igenmatch_.push_back(imatch);
   }
-
-  tree.Fill();
-  
- }
+  return imatch;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
