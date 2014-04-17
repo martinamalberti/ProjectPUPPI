@@ -84,6 +84,7 @@ void puppiCleanContainer::getRMSAvg(int iOpt,std::vector<fastjet::PseudoJet> &iC
 double puppiCleanContainer::compute(int iOpt,double iVal,double iMed,double iRMS,double iChi2Exp) {
     if(iOpt == 1 && iVal < iMed) return 0;
     if(iOpt == 1 && iVal > iMed) return 1;
+    if (iRMS==0) return 0; // protection against rare cases in which the RMS is = 0 
     double lVal = (iVal-iMed)/iRMS;
     int lNDof = 1;
     if(iChi2Exp > 0) lVal += iChi2Exp;
@@ -151,6 +152,7 @@ std::vector<fastjet::PseudoJet> puppiCleanContainer::puppiEvent     (int iOpt,do
         if(pWeight*_pfParticles[i0].pt()  < 0.05) continue;  //==> Elminate the low pT stuff 
         if(pWeight*_pfParticles[i0].E()   < fNeutralMinE && _recoParticles[i0].pfType > 3 ) continue;  //threshold cut on the neutral E
         
+	//	cout  << "lMed0 = "<< lMed0 << "  lRMS0 = " << lRMS0 << "  pWeight = " << pWeight <<endl;
         //Produce
         PseudoJet curjet( pWeight*_pfParticles[i0].px(), pWeight*_pfParticles[i0].py(), pWeight*_pfParticles[i0].pz(), pWeight*_pfParticles[i0].e());
         curjet.set_user_index(_recoParticles[i0].id);
