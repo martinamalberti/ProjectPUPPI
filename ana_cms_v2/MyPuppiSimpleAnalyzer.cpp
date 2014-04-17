@@ -241,7 +241,7 @@ int main( int argc, char **argv ) {
     //TFile* lReadout = new TFile(recoFile);
     //TTree* fTree    = (TTree*) lReadout->FindObjectAny("Events");
 
-    int useDeltaZ  = true; 
+    int useDeltaZ  = false; 
 
     // args
     int maxEvents  = atoi(argv[1]);
@@ -298,8 +298,6 @@ int main( int argc, char **argv ) {
     while(true){
         
         nEvts++;
-	//cout << "Analyzing events " <<  nEvts << endl;
-	//if ( nEvts == 55 ) break; 
 	if (nEvts % 10 == 0) std::cout << "file is " << ((float) nEvts)*100./maxEvents << "% done" << std::endl;
         
 
@@ -325,19 +323,16 @@ int main( int argc, char **argv ) {
 	initVars();
         //std::cout << "analyze pf" << std::endl;
         std::vector<fastjet::PseudoJet> pfJets = analyzeEvent( pfParticles, *tree_pf, canvname, jetR, true, genJets);
-        //getGenMatchIndex(pfJets, genJets, v_jet_igenmatch_);
 	pfRho = curRho;
         initVars();
         //std::cout << "analyze pfchs" << std::endl;
         isPFCHS = true;
 	std::vector<fastjet::PseudoJet> pfchsJets = analyzeEvent( chsParticles, *tree_pfchs, canvname, jetR, true, genJets);
-        //getGenMatchIndex(pfchsJets, genJets, v_jet_igenmatch_);
 	pfchsRho = curRho;
         isPFCHS = false;
         initVars();
         //std::cout << "analyze puppi" << std::endl;
         std::vector<fastjet::PseudoJet> puppiJets = analyzeEvent( puppiParticles, *tree_pf_puppi, canvname, jetR, true, genJets);
-	//getGenMatchIndex(puppiJets, genJets, v_jet_igenmatch_);
 	//
 	
 	// read the tree containing standard CMSSW jets and fill directly the output tree   
@@ -492,7 +487,8 @@ void readCMSEvent(TTree *iTree, std::vector< RecoObj > &allParticles,bool iUseDe
 	//Charged particles are counted if they have a vertex assignment
         // PV particles are all PV chargd particles + all unassociated particles
 
-        isCh   = (fabs(pPart->q) > 0) && (pPart->vtxId > -1);
+        //isCh   = (fabs(pPart->q) > 0) && (pPart->vtxId > -1);
+	isCh   = (fabs(pPart->q) > 0) && (pPart->vtxId >= -1); // this allows to use vtxId =0 || -1 for ChLV 
         isPV   = (pPart->vtxId <= 0);
         if(iUseDeltaZ) isCh   = (pPart->pfType == 1 || pPart->pfType == 2 || pPart->pfType == 3) && (pPart->vtxId > -1 || fabs(pPart->dz) < 0.2) ;
 	if(iUseDeltaZ) isPV   = (pPart->vtxId  == 0  || (fabs(pPart->dz) < 0.2 && isCh));
