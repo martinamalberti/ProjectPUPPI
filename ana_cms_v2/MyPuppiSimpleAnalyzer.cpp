@@ -241,7 +241,7 @@ int main( int argc, char **argv ) {
     //TFile* lReadout = new TFile(recoFile);
     //TTree* fTree    = (TTree*) lReadout->FindObjectAny("Events");
 
-    int useDeltaZ  = false; 
+    int useDeltaZ  = true; 
 
     // args
     int maxEvents  = atoi(argv[1]);
@@ -260,6 +260,8 @@ int main( int argc, char **argv ) {
 
     if (maxEvents < 0)
       maxEvents = fTree->GetEntries();
+
+    cout << "This analysis will run on "<< maxEvents << " entries" <<endl; 
     
     /////////////////////////
     // otrees
