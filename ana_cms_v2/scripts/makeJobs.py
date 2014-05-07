@@ -6,8 +6,8 @@ import glob
 from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-i","--inputdir",dest="inputdir",type="string",help="Path where ntuples are located. Example: /store/cmst3/user/malberti/HIGGS/VERTEX/2012/DATA/")
-parser.add_option("-w","--workdir",dest="workdir",type="string",default="EffJobs",help="Name of the directory for jobs")
-parser.add_option("-o","--outputname",dest="outputname",type="string",default="testEfficiency",help="Name of the output file")
+parser.add_option("-w","--workdir",dest="workdir",type="string",default="mydir",help="Name of the directory for jobs")
+parser.add_option("-o","--outputname",dest="outputname",type="string",default="out",help="Name of the output file")
 parser.add_option("-n","--njobs",dest="njobs",type="int",help="Number of jobs")
 parser.add_option("-m","--maxEvents",dest="maxEvents",type="int",default=-1,help="Max number of events per job. If maxEvents=-1, all events are analyzed.")
 parser.add_option("-r","--radius",dest="radius",type="float",default=0.5,help="Jet radius")
@@ -89,7 +89,7 @@ def submitJobs(wdir, njobs, queue):
         
 
 
-def checkJobs(wdir,output, queue):
+def checkJobs(wdir, output, queue):
     jobs = glob.glob( '%s/JOB_*/sub*.sh'% (wdir) )
     print 'Total number of jobs: %d' %len(jobs)
     
@@ -141,7 +141,7 @@ if not options.checkJobs and not options.resubmit:
         
 elif options.resubmit and options.job >-1 :
     print 'Resubmitting job %d ' %options.job
-    resubcmd = 'bsub -q %s -o %s/JOB_%d/sub_%d.log %s/JOB_%d/sub_%d.sh'%(options.queue,workingdir,options.job,options.job,wdir,options.job,options.job )
+    resubcmd = 'bsub -q %s -o %s/JOB_%d/sub_%d.log %s/JOB_%d/sub_%d.sh'%(options.queue,workingdir,options.job,options.job,workingdir,options.job,options.job )
     #print resubcmd
     os.system(resubcmd)
 
