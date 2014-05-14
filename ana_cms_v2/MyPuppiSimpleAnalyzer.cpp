@@ -82,6 +82,12 @@ std::vector<float> v_jet_pt_4Vcorr_;
 std::vector<float> v_jet_eta_4Vcorr_;
 std::vector<float> v_jet_phi_4Vcorr_;
 
+// gen level quantities
+std::vector<float> v_jet_genm_;
+std::vector<float> v_jet_genpt_;
+std::vector<float> v_jet_geneta_;
+std::vector<float> v_jet_genphi_;
+
 // jet prop.
 std::vector<float> v_jet_nParticles_;
 
@@ -298,6 +304,10 @@ void initVars(){
     v_jet_phi_4Vcorr_.clear();
     v_jet_nParticles_.clear();
     v_jet_igenmatch_.clear();
+    v_jet_genm_.clear();
+    v_jet_genpt_.clear();
+    v_jet_geneta_.clear();
+    v_jet_genphi_.clear();
 }
 // ------------------------------------------------------------------------------------------
 
@@ -338,9 +348,14 @@ void addBranches( TTree &tree ){
     tree.Branch("jetEta",&v_jet_eta_4Vcorr_);
     tree.Branch("jetPhi",&v_jet_phi_4Vcorr_);
 
+    tree.Branch("jetGenMass",&v_jet_genm_);
+    tree.Branch("jetGenPt",&v_jet_genpt_);
+    tree.Branch("jetGenEta",&v_jet_geneta_);
+    tree.Branch("jetGenPhi",&v_jet_genphi_);
+
     tree.Branch("jetNparticles",&v_jet_nParticles_);
 
-    tree.Branch("jetGenMacthIndex",&v_jet_igenmatch_);
+    tree.Branch("jetGenMatchIndex",&v_jet_igenmatch_);
     
 }
 // ------------------------------------------------------------------------------------------
@@ -596,6 +611,19 @@ std::vector< fastjet::PseudoJet > analyzeEvent( std::vector < fastjet::PseudoJet
 	  imatch = getGenMatchIndex(pCorrJet,genJets);
 	}
 	v_jet_igenmatch_.push_back(imatch);
+	
+	if (imatch > -1){
+	  v_jet_genm_.push_back( genJets[imatch].m() );
+	  v_jet_genpt_.push_back( genJets[imatch].pt() );
+	  v_jet_geneta_.push_back( genJets[imatch].eta() );
+	  v_jet_genphi_.push_back( genJets[imatch].phi() );
+	}
+	else {
+	  v_jet_genm_.push_back( -999. );
+          v_jet_genpt_.push_back( -999. );
+          v_jet_geneta_.push_back( -999. );
+          v_jet_genphi_.push_back( -999.);
+	}
 
 	v_jet_nParticles_.push_back((out_jets_[i].constituents()).size());
 	
