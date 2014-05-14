@@ -10,7 +10,7 @@ int main( int argc, char **argv ) {
 
   gROOT->ProcessLine("#include <vector>");
 
-  TFile *inputFile = TFile::Open("../outtree_test.root");
+  TFile *inputFile = TFile::Open(argv[1]);
   if (inputFile==0){
     std::cout<<"Error: cannot open " << inputFile->GetName() << std::endl;
     exit(0);
@@ -24,30 +24,33 @@ int main( int argc, char **argv ) {
   int maxEntries = -1;
 
   JetTreeAnalyzer *genAnalyzer = new JetTreeAnalyzer(tree_gen);
-  genAnalyzer->bookHistograms("gen");
+  //  genAnalyzer->bookHistograms("_gen");
+  genAnalyzer->bookHistograms("");
   genAnalyzer->fillHistograms(maxEntries,25.);
 
 
   JetTreeAnalyzer *pfAnalyzer = new JetTreeAnalyzer(tree_pf);
-  pfAnalyzer->bookHistograms("pf");
+  //  pfAnalyzer->bookHistograms("_pf");
+  pfAnalyzer->bookHistograms("");
   pfAnalyzer->fillHistograms(maxEntries,25.);
 
 
   JetTreeAnalyzer *pfchsAnalyzer = new JetTreeAnalyzer(tree_pfchs);
-  pfchsAnalyzer->bookHistograms("pfchs");
+  //  pfchsAnalyzer->bookHistograms("_pfchs");
+  pfchsAnalyzer->bookHistograms("");
   pfchsAnalyzer->fillHistograms(maxEntries,25.);
 
 
   JetTreeAnalyzer *puppiAnalyzer = new JetTreeAnalyzer(tree_puppi);
-  puppiAnalyzer->bookHistograms("puppi");
+  //  puppiAnalyzer->bookHistograms("_puppi");
+  puppiAnalyzer->bookHistograms("");
   puppiAnalyzer->fillHistograms(maxEntries,25.);
   
 
   // save results in file
   TFile *outfile = new TFile("out.root","RECREATE");
-  genAnalyzer->saveHistograms(outfile);
-  pfAnalyzer->saveHistograms(outfile);
-  pfchsAnalyzer->saveHistograms(outfile);
-  puppiAnalyzer->saveHistograms(outfile);
-
+  genAnalyzer->saveHistograms(outfile,"gen");
+  pfAnalyzer->saveHistograms(outfile,"pf");
+  pfchsAnalyzer->saveHistograms(outfile,"pfchs");
+  puppiAnalyzer->saveHistograms(outfile,"puppi");
 }
