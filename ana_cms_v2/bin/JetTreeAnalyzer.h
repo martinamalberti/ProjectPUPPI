@@ -45,7 +45,7 @@ class JetTreeAnalyzer{
 
   virtual void bookHistograms(std::string suffix);
   virtual void fillHistograms(int maxEntries, float minPt);
-  virtual void saveHistograms(TFile *file);
+  virtual void saveHistograms(TFile *file, std::string dir);
 
   
   TTree          *fChain;   //!pointer to the analyzed TTree or TChain                                                                                                                                          
@@ -67,25 +67,33 @@ class JetTreeAnalyzer{
   std::vector<float>   *jetEta;
   std::vector<float>   *jetPhi;
   std::vector<float>   *jetNparticles;
-  std::vector<int>     *jetGenMacthIndex;
+  std::vector<int>     *jetGenMatchIndex;
+  std::vector<float>   *jetGenMass;
+  std::vector<float>   *jetGenPt;
+  std::vector<float>   *jetGenEta;
+  std::vector<float>   *jetGenPhi;
 
   // List of branches                                                                                                                                                                                           
-  TBranch        *b_njetsUncorr;   //!                                                                                                                                                                          
-  TBranch        *b_njets;   //!                                                                                                                                                                                
-  TBranch        *b_sumEt;   //!                                                                                                                                                                                
-  TBranch        *b_etMissX;   //!                                                                                                                                                                              
-  TBranch        *b_etMissY;   //!                                                                                                                                                                              
-  TBranch        *b_jetUncorrMass;   //!                                                                                                                                                                        
-  TBranch        *b_jetUncorrPt;   //!                                                                                                                                                                          
-  TBranch        *b_jetUncorrEta;   //!                                                                                                                                                                         
-  TBranch        *b_jetUncorrPhi;   //!                                                                                                                                                                         
-  TBranch        *b_jetTrimmedMass;   //!                                                                                                                                                                       
-  TBranch        *b_jetMass;   //!                                                                                                                                                                              
-  TBranch        *b_jetPt;   //!                                                                                                                                                                                
-  TBranch        *b_jetEta;   //!                                                                                                                                                                               
-  TBranch        *b_jetPhi;   //!                                                                                                                                                                               
-  TBranch        *b_jetNparticles;   //!                                                                                                                                                                        
-  TBranch        *b_jetGenMacthIndex;   //!    
+  TBranch        *b_njetsUncorr;
+  TBranch        *b_njets; 
+  TBranch        *b_sumEt;
+  TBranch        *b_etMissX;
+  TBranch        *b_etMissY;
+  TBranch        *b_jetUncorrMass;
+  TBranch        *b_jetUncorrPt;
+  TBranch        *b_jetUncorrEta;
+  TBranch        *b_jetUncorrPhi;
+  TBranch        *b_jetTrimmedMass;
+  TBranch        *b_jetMass;
+  TBranch        *b_jetPt;
+  TBranch        *b_jetEta;
+  TBranch        *b_jetPhi;
+  TBranch        *b_jetNparticles;
+  TBranch        *b_jetGenMatchIndex;
+  TBranch        *b_jetGenMass;
+  TBranch        *b_jetGenPt;
+  TBranch        *b_jetGenEta;
+  TBranch        *b_jetGenPhi;
 
 
   // histograms declaration
@@ -118,6 +126,8 @@ class JetTreeAnalyzer{
 
   TH1F* hmass;
   TH1F* hmass_response;
+  TH1F* hmass_leadjet;
+  TH1F* hmass_response_leadjet;
 
   TH1F* hnparticles;
 
