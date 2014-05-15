@@ -450,6 +450,19 @@ void readCMSSWJet(TTree *iTree, int entry, TTree &tree, std::vector<fastjet::Pse
     delete recojet;
 
     v_jet_igenmatch_.push_back(imatch);
+    if (imatch > -1){
+      v_jet_genm_.push_back( genJets[imatch].m() );
+      v_jet_genpt_.push_back( genJets[imatch].pt() );
+      v_jet_geneta_.push_back( genJets[imatch].eta() );
+      v_jet_genphi_.push_back( genJets[imatch].phi() );
+    }
+    else {
+      v_jet_genm_.push_back( -999. );
+      v_jet_genpt_.push_back( -999. );
+      v_jet_geneta_.push_back( -999. );
+      v_jet_genphi_.push_back( -999.);
+    }
+    
     
     njets_++;
     if (pJet->pt > 25){
