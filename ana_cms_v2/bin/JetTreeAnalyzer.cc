@@ -1,40 +1,19 @@
 #include "./JetTreeAnalyzer.h"
 
-#include "TROOT.h"
-#include "TStyle.h"
-#include "TFile.h"
-#include "TF1.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TProfile.h"
-#include "TCanvas.h"
-#include "TPaveStats.h"
-#include "TLegend.h"
-#include "TChain.h"
-
-#include "TMath.h"
-#include <boost/shared_ptr.hpp>
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <sstream>
-#include <ctime>
-#include <map>
-#include <algorithm>
-#include <math.h>
-#include <vector>
-
-
+// --- constructor ------------------------------------------------------
 JetTreeAnalyzer::JetTreeAnalyzer(TTree *tree){
   Init(tree);
 }
 
+// ----------------------------------------------------------------------
 JetTreeAnalyzer::~JetTreeAnalyzer()
 {
   if (!fChain) return;
   delete fChain->GetCurrentFile();
 }
 
+
+// --- Init tree --------------------------------------------------------
 void JetTreeAnalyzer::Init(TTree *tree)
 {
   // The Init() function is called when the selector needs to initialize                                                                                                                                        
@@ -89,7 +68,7 @@ void JetTreeAnalyzer::Init(TTree *tree)
   fChain->SetBranchAddress("jetGenPhi", &jetGenPhi, &b_jetGenPhi);
 }
 
-
+// --- get Tree entry ----------------------------------------------------------------
 Int_t JetTreeAnalyzer::GetEntry(Long64_t entry)
 {
   // Read contents of entry.                                                                                                                                                                           
@@ -98,6 +77,7 @@ Int_t JetTreeAnalyzer::GetEntry(Long64_t entry)
 }
 
 
+// --- Book histograms ---------------------------------------------------------------
 void JetTreeAnalyzer::bookHistograms(std::string suffix = ""){
 
   std::cout << "Booking histograms for " << suffix.c_str() << " tree" << std::endl;
@@ -133,16 +113,17 @@ void JetTreeAnalyzer::bookHistograms(std::string suffix = ""){
   heta_good_leadjet = new TH1F(("heta_good_leadjet"+suffix).c_str(), ("heta_good_leadjet"+suffix).c_str(), 100, -5, 5 );
 
   hmass = new TH1F(("hmass"+suffix).c_str(), ("hmass"+suffix).c_str(), 100, 0, 100 );
-  hmass_response = new TH1F(("hmass_response"+suffix).c_str(), ("hmass_response"+suffix).c_str(), 100, -5, 5 );
+  hmass_response = new TH1F(("hmass_response"+suffix).c_str(), ("hmass_response"+suffix).c_str(), 100, -50, 50 );
 
   hmass_leadjet = new TH1F(("hmass_leadjet"+suffix).c_str(), ("hmass_leadjet"+suffix).c_str(), 100, 0, 100 );
-  hmass_response_leadjet = new TH1F(("hmass_response_leadjet"+suffix).c_str(), ("hmass_response_leadjet"+suffix).c_str(), 100, -5, 5 );
+  hmass_response_leadjet = new TH1F(("hmass_response_leadjet"+suffix).c_str(), ("hmass_response_leadjet"+suffix).c_str(), 100, -50, 50 );
 
   hnparticles = new TH1F(("hnparticles"+suffix).c_str(), ("hnparticles"+suffix).c_str(), 100, 0, 100 );
 
 }
 
 
+// --- Fill histograms ---------------------------------------------------------------
 void JetTreeAnalyzer::fillHistograms(int maxEntries, float minPt){
 
   std::cout << "Filling histograms..." << std::endl;
@@ -156,34 +137,35 @@ void JetTreeAnalyzer::fillHistograms(int maxEntries, float minPt){
     maxEntries = fChain->GetEntries();
 
   
-  int njets = 0;
+  int nj = 0;
 
   for (int entry = 0; entry < maxEntries; entry++){
     fChain->GetEntry(entry);
     
-    //    if (entry%100==0) std::cout << "Analyzing entry : " << entry << "\r" << std::flush;
-    if (entry%1==0) std::cout << "Analyzing entry : " << entry << "\r" << std::endl;
-    
+    if (entry%100==0) std::cout << "Analyzing entry : " << entry << "\r" << std::flush;
+        
     // --- Loop over jets in this event                                                                                                                                                                       
-    std::cout << njetsUncorr << "  " << jetUncorrPt->size() <<std::endl;
     for (int j = 0; j < njetsUncorr; j++){
       
       float pt = jetUncorrPt->at(j);
       
       if (pt < minPt)  continue;
 
-      std::cout << pt << std::endl;
-
-      njets++;
+      nj++;
       int imatch = (jetGenMatchIndex)->at(j);
-
-      std::cout << imatch << std::endl;
 
       hrawpt->Fill(jetUncorrPt->at(j));
       hpt->Fill(jetPt->at(j));
       heta->Fill(jetEta->at(j));
       hmass->Fill(jetMass->at(j));
       hnparticles->Fill(jetNparticles->at(j));
+      
+      if (j == 0){
+	hrawpt_leadjet->Fill(jetUncorrPt->at(j));
+	hpt_leadjet->Fill(jetPt->at(j));
+	heta_leadjet->Fill(jetEta->at(j));
+	hmass_leadjet->Fill(jetMass->at(j));
+      }
 
       if (imatch == -1) {
 	hrawpt_pu->Fill(jetUncorrPt->at(j));
@@ -205,7 +187,7 @@ void JetTreeAnalyzer::fillHistograms(int maxEntries, float minPt){
 	  heta_good_leadjet->Fill(jetEta->at(j));
 	}
       }
-      std::cout<<"gen pt = "<< jetGenPt->at(j) <<std::endl;
+
       // -- response plots
       if (imatch > -1){
 	hrawpt_response->Fill(jetUncorrPt->at(j)-jetGenPt->at(j));
@@ -226,13 +208,14 @@ void JetTreeAnalyzer::fillHistograms(int maxEntries, float minPt){
 }
 
 
+// --- Save histograms ---------------------------------------------------------------
 void JetTreeAnalyzer::saveHistograms(TFile *outfile, std::string dir){
 
   std::cout << "Saving histograms ... " << std::endl;
   
   outfile->cd();
   TDirectory *thisdir = outfile->mkdir(dir.c_str());
-  thisdir->cd();    // make the "tof" dire
+  thisdir->cd();    // make the "thisdir" directory
   
   hnjets->Write();
   hrawpt->Write();
