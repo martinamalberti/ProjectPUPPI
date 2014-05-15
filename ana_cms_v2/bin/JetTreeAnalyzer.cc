@@ -16,15 +16,10 @@ JetTreeAnalyzer::~JetTreeAnalyzer()
 // --- Init tree --------------------------------------------------------
 void JetTreeAnalyzer::Init(TTree *tree)
 {
-  // The Init() function is called when the selector needs to initialize                                                                                                                                        
-  // a new tree or chain. Typically here the branch addresses and branch                                                                                                                                        
-  // pointers of the tree will be set.                                                                                                                                                                          
-  // It is normally not necessary to make changes to the generated                                                                                                                                              
-  // code, but the routine can be extended by the user if needed.                                                                                                                                               
-  // Init() will be called many times when running on PROOF                                                                                                                                                     
-  // (once per file to be processed).                                                                                                                                                                           
+  // The Init() function is called when the selector needs to initialize                                                                                                   
+  // a new tree or chain. Typically here the branch addresses and branch                                                    
+  // pointers of the tree will be set.                                                                                                                                             // It is normally not necessary to make changes to the generated                                                                                                                 // code, but the routine can be extended by the user if needed.                                                                                                                  // Init() will be called many times when running on PROOF                                                                                                                        // (once per file to be processed).                                                                                                                                            
 
-  // Set object pointer                                                                                                                                                                                         
   jetUncorrMass = 0;
   jetUncorrPt = 0;
   jetUncorrEta = 0;
