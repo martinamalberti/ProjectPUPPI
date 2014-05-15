@@ -5,21 +5,13 @@
 #include <TChain.h>
 #include <TTree.h>
 #include <TFile.h>
-#include <TH1F.h>
-#include <vector>
-#include <string>
-
-#include "TROOT.h"
-#include "TStyle.h"
-#include "TFile.h"
-#include "TF1.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TProfile.h"
 #include "TCanvas.h"
 #include "TPaveStats.h"
 #include "TLegend.h"
-#include "TChain.h"
+#include "TStyle.h"
 
 #include "TMath.h"
 #include <boost/shared_ptr.hpp>
